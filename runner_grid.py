@@ -27,8 +27,6 @@ https://project.las.ethz.ch/task1
   The source should contain a `mapper` and a `reducer` function.
   The `mapper(key, value)` function takes as input a (key, value) tuple where
   key is None and value is a string. It should yield (key, value) pairs.
-  The `reducer(key, value)` function takes as input a key and a list of values.
-  It should yield (key, value) pairs.
 
 The source of a word count program looks as follows:
 
@@ -72,7 +70,6 @@ import logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)
 
-
 def chunks(iterable, size=10):
     iterator = iter(iterable)
     for first in iterator:
@@ -115,6 +112,7 @@ def mapreduce(input, mapper, reducer, batch_size=50, log=False):
     d = defaultdict(list)
     for pairs_generator in chunks(input, batch_size):
         pairs = list(pairs_generator)
+        #print(pairs)
         if log:
             for k, v in pairs:
                 logger.debug("  Running mapper for '%s' key with value '%s'...", k, v)
@@ -150,7 +148,7 @@ def yield_pattern(path):
         if os.path.isfile(i):
             with open(i, "r") as fin:
                 for line in fin:
-                    yield None, line
+                    yield str(args.band_width)+"*"+str(a_hash)+"*"+str(b_hash), line
 
 
 def import_from_file(f):
@@ -198,6 +196,7 @@ def evaluate(reported_duplicates, true_duplicates):
 def run(sourcestring, input_pattern, duplicates_file, batch, log):
     mod = import_from_file(sourcestring)
     input = yield_pattern(input_pattern)
+    #print(input)
 
     reported_duplicates = Set()
     for output in mapreduce(input, mod.mapper, mod.reducer, batch, log):
@@ -221,12 +220,23 @@ def main():
         'source_file', help='.py file with mapper and reducer function')
     parser.add_argument(
         '--log', '-l', help='Enable logging for debugging', action='store_true')
+    parser.add_argument(
+        '--band_width', type=int, default=32, help='Number per band')
+    parser.add_argument(
+        '--hash_num', type=int, default=1024, help='Number of hash functions')
+    global args
     args = parser.parse_args()
     INPUT_PATTERN = "data/handout_shingles.txt"
     DUPLICATES = "data/handout_duplicates.txt"
 
-
     BATCH = 50
+
+    random.seed(124)
+    global a_hash, b_hash
+    a_hash = [random.randrange(sys.maxint) for _ in xrange(0, args.hash_num)]
+    b_hash = [random.randrange(sys.maxint) for _ in xrange(0, args.hash_num)]
+    print("Number of Hashing functions: {hash_num}".format(hash_num = args.hash_num))
+    print("Number per band: {band_width}".format(band_width = args.band_width))
 
     with open(args.source_file, "r") as fin:
         source = fin.read()
